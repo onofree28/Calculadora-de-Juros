@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Investimentos</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      z-index: 1;
+    }
+    h1 {
+      color: #1c3d5a;
+      font-weight: 600;
+    }
+    label {
+      font-weight: 500;
+      margin-top: 10px;
+      display: block;
+      color: #1c3d5a;
+    }
+    input[type="text"], input[type="range"], select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1em;
+      font-family: 'Poppins', sans-serif;
+    }
+    button {
+      background-color: #1c3d5a;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1.2em;
+      font-weight: 500;
+    }
+    button:hover {
+      background-color: #144057;
+    }
+    .result {
+      font-size: 1.5em;
+      color: #4caf50;
+      margin-top: 20px;
+    }
+    .slider-container {
+      margin: 15px 0;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    .slider-value {
+      text-align: center;
+      font-size: 1.2em;
+      color: #1c3d5a;
+    }
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #1c3d5a;
+      font-size: 1.5em;
+      z-index: 10;
+      flex-direction: column;
+    }
+    .loader {
+      border: 8px solid #f3f3f3; /* Light grey */
+      border-top: 8px solid #1c3d5a; /* Blue */
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      animation: spin 1.5s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app" class="container">
+    <h1>Calculadora de Investimentos</h1>
+
+    <div v-if="!calculando">
+      <div>
+        <label>Valor Inicial (R$):</label>
+        <input v-model="valorInicial" type="text" placeholder="Ex: 1000" @input="mascararValor" />
+      </div>
+
+      <div>
+        <label>Taxa de Juros (% ao ano):</label>
+        <select v-model.number="taxaJuros">
+          <option v-for="taxa in taxas" :value="taxa.valor">{{ taxa.nome }} - {{ taxa.valor }}% ao ano</option>
+        </select>
+      </div>
+
+      <div class="slider-container">
+        <label>Período (em anos):</label>
+        <input v-model.number="periodo" type="range" min="1" max="30" />
+        <div class="slider-value">{{ periodo }} anos</div>
+      </div>
+
+      <div>
+        <label>Tipo de Juros:</label>
+        <select v-model="tipoJuros">
+          <option value="simples">Juros Simples</option>
+          <option value="composto">Juros Compostos</option>
+        </select>
+      </div>
+
+      <button @click="calcular">Calcular</button>
+    </div>
+
+    <div v-if="calculando" class="loading-screen">
+      <div class="loader"></div>
+      Calculando os juros, por favor aguarde...
+    </div>
+
+    <div v-if="resultado !== null && !calculando" class="result">
+      <h3>Resultado: {{ resultadoFormatado }}</h3>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        valorInicial: '',
+        taxaJuros: 13.25, // Valor padrão baseado na Selic atual
+        periodo: 1, // Valor inicial do slider
+        tipoJuros: 'simples',
+        resultado: null,
+        calculando: false, // Controle da tela de carregamento
+        taxas: [
+          { nome: 'Poupança', valor: 2.5 },
+          { nome: 'CDB', valor: 9.0 },
+          { nome: 'LCI/LCA', valor: 12.0 },
+          { nome: 'Fundo Imobiliário', valor: 15.0 },
+          { nome: 'Taxa Selic', valor: 13.25 } // Taxa Selic atual
+        ]
+      },
+      computed: {
+        resultadoFormatado() {
+          if (this.resultado === null) return '';
+          let valor = this.resultado.toFixed(2).replace('.', ',');
+          valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+          return 'R$ ' + valor;
+        }
+      },
+      methods: {
+        calcular() {
+          this.calculando = true;
+          
+          // Simulação de tempo de processamento
+          setTimeout(() => {
+            const valorLimpo = Number(this.valorInicial.replace(/[R$\.,]/g, '').trim()) / 100;
+            const taxaDecimal = this.taxaJuros / 100;
+
+            if (this.tipoJuros === 'simples') {
+              this.resultado = valorLimpo + (valorLimpo * taxaDecimal * this.periodo);
+            } else if (this.tipoJuros === 'composto') {
+              this.resultado = valorLimpo * Math.pow(1 + taxaDecimal, this.periodo);
+            }
+
+            this.calculando = false; // Remover a tela de carregamento
+          }, 2000); // Simulando um tempo de cálculo
+        },
+        mascararValor() {
+          let valor = this.valorInicial;
+          valor = valor.replace(/\D/g, ''); // Remove tudo que não é dígito
+          valor = (valor / 100).toFixed(2) + ''; // Converte para valor monetário
+          valor = valor.replace('.', ','); // Substitui ponto por vírgula
+          valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Adiciona pontos
+          this.valorInicial = 'R$ ' + valor;
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>

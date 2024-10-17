@@ -47,6 +47,7 @@
       border-radius: 4px;
       font-size: 1em;
       font-family: 'Poppins', sans-serif;
+      box-sizing: border-box;
     }
     button {
       background-color: #1c3d5a;
@@ -190,12 +191,16 @@
         tipoJuros: 'simples',
         resultado: null,
         calculando: false, // Controle da tela de carregamento
+        cdiAtual: 13.65, // CDI atual como base
         taxas: [
           { nome: 'Poupança', valor: 2.5 },
           { nome: 'CDB', valor: 9.0 },
           { nome: 'LCI/LCA', valor: 12.0 },
           { nome: 'Fundo Imobiliário', valor: 15.0 },
-          { nome: 'Taxa Selic', valor: 13.25 } // Taxa Selic atual
+          { nome: 'Taxa Selic', valor: 13.25 }, // Taxa Selic atual
+          { nome: '100% CDI', valor: 13.65 }, // 100% do CDI atual
+          { nome: '105% CDI', valor: 13.65 * 1.05 }, // 105% do CDI
+          { nome: '110% CDI', valor: 13.65 * 1.10 }  // 110% do CDI
         ]
       },
       computed: {

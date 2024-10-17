@@ -155,9 +155,13 @@
       </div>
 
       <div class="slider-container">
-        <label>Período (em anos):</label>
-        <input v-model.number="periodo" type="range" min="1" max="30" />
-        <div class="slider-value">{{ periodo }} anos</div>
+        <label>Período:</label>
+        <select v-model="tipoPeriodo" @change="atualizarSlider">
+          <option value="anos">Anos</option>
+          <option value="meses">Meses</option>
+        </select>
+        <input v-model.number="periodo" type="range" :min="minPeriodo" :max="maxPeriodo" />
+        <div class="slider-value">{{ periodo }} {{ tipoPeriodo }}</div>
       </div>
 
       <div>
@@ -188,9 +192,12 @@
         valorInicial: '',
         taxaJuros: 13.25, // Valor padrão baseado na Selic atual
         periodo: 1, // Valor inicial do slider
+        tipoPeriodo: 'anos', // Tipo de período inicial
         tipoJuros: 'simples',
         resultado: null,
         calculando: false, // Controle da tela de carregamento
+        minPeriodo: 1,
+        maxPeriodo: 30,
         cdiAtual: 13.65, // CDI atual como base
         taxas: [
           { nome: 'Poupança', valor: 2.5 },
@@ -212,31 +219,50 @@
         }
       },
       methods: {
+        atualizarSlider() {
+          this.minPeriodo = this.tipoPeriodo === 'anos' ? 1 : 1;
+          this.maxPeriodo = this.tipoPeriodo === 'anos' ? 30 : 360;
+          if (this.periodo > this.maxPeriodo) {
+            this.periodo = this.maxPeriodo;
+          }
+        },
         calcular() {
+          if (!this.valorInicial || !this.taxaJuros || this.periodo < 1) {
+            alert('Por favor, preencha todos os campos!');
+            return;
+          }
+
           this.calculando = true;
-          
+
           // Simulação de tempo de processamento
           setTimeout(() => {
             const valorLimpo = Number(this.valorInicial.replace(/[R$\.,]/g, '').trim()) / 100;
             const taxaDecimal = this.taxaJuros / 100;
 
+            let periodoEmAnos = this.periodo;
+            if (this.tipoPeriodo === 'meses') {
+              periodoEmAnos = this.periodo / 12;
+            }
+
             if (this.tipoJuros === 'simples') {
-              this.resultado = valorLimpo + (valorLimpo * taxaDecimal * this.periodo);
+              this.resultado = valorLimpo + (valorLimpo * taxaDecimal * periodoEmAnos);
             } else if (this.tipoJuros === 'composto') {
-              this.resultado = valorLimpo * Math.pow(1 + taxaDecimal, this.periodo);
+              this.resultado = valorLimpo * Math.pow(1 + taxaDecimal, periodoEmAnos);
             }
 
             this.calculando = false; // Remover a tela de carregamento
-          }, 2000); // Simulando um tempo de cálculo
+          }, 1500);
         },
         mascararValor() {
-          let valor = this.valorInicial;
-          valor = valor.replace(/\D/g, ''); // Remove tudo que não é dígito
-          valor = (valor / 100).toFixed(2) + ''; // Converte para valor monetário
-          valor = valor.replace('.', ','); // Substitui ponto por vírgula
+          let valor = this.valorInicial.replace(/\D/g, '');
+          valor = (valor / 100).toFixed(2) + '';
+          valor = valor.replace('.', ',');
           valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Adiciona pontos
           this.valorInicial = 'R$ ' + valor;
         }
+      },
+      mounted() {
+        this.atualizarSlider(); // Inicializa o slider com as configurações corretas
       }
     });
   </script>
